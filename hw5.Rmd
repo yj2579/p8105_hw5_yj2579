@@ -29,27 +29,36 @@ fill_na = function(x) {
   }
 }
 
+# Apply the function to the dataset 
 irs_filled_df = (map_dfr(iris_with_missing, fill_na, .id = "input"))
 ```
 
 # Problem 2
 ```{r}
+# Load the data in 
 files = list.files(path = "data")
 
+# Map the data with groups(controls and experiments)
 agg_data = tibble(files) %>% 
   mutate(
     file_content = map(files, ~ read_csv(file.path("./data", .)))
   ) %>% 
   unnest()
 
-tidy_data = agg_data %>%
+# Tidy data 
+tidy_data = 
+  agg_data %>%
   rename(group_id = "files") %>% 
   pivot_longer(
     week_1:week_8, 
     names_to = "week", 
     values_to = "value"
   )
+# Show the current data 
+tidy_data %>% 
+  knitr::kable()
 
+# Make a plot of different groups 
 tidy_data %>% 
   ggplot(aes(x = week, y = value)) +
   geom_line(aes(group = group_id, color = group_id)) +
@@ -62,4 +71,94 @@ tidy_data %>%
 ```
 
 We can see the pattern that the experiment group has higher values and increase along with the time. On the other hand, the control group has a reletively small variance and small change along the time. 
+
+# Problem 3 
+```{r}
+# Write a slr function 
+sim_lin_regression = function(n=30, beta0=2, beta1 = 0) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = 0, sd = 1),
+    y = beta0 + beta1 * x + rnorm(n, 0, sqrt(50))
+  )
+  
+  ls_fit = lm(y ~ x, data = sim_data) %>% 
+    broom::tidy()
+  
+  tibble(
+    beta_1_hat = ls_fit[[2,2]],
+    p_value = ls_fit[[2,5]]
+  )
+}
+
+# do 10000 times simulations 
+sim_results = 
+  rerun(1000, sim_lin_regression(30, 2, 0)) %>% 
+  bind_rows()
+
+repeat_results = 
+  tibble(beta1 = c(0, 1, 2, 3, 4, 5, 6)) %>% 
+  mutate(
+    output_list = map(.x = beta1, ~rerun(1000,       
+                                    sim_lin_regression(beta1 = .x))),
+    estimate_df = map(output_list, bind_rows)) %>% 
+  select(-output_list) %>% 
+  unnest(estimate_df)
+```
+
+## making plots 
+### plot about relationship between Effect Size and Power
+```{r}
+#make a plot to show the relationship between sample size and power based on significance 
+repeat_results %>% 
+  mutate(reject = ifelse(p_value <= 0.05, "significant", "non-significant")) %>% 
+  group_by(beta1, reject) %>% 
+  summarize(significant_count = n()) %>% 
+  filter(reject == "significant") %>% 
+  mutate(significant_rate = significant_count/1000) %>% 
+  ggplot(aes(x = beta1, y = significant_rate)) + 
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Relationship between Effect Size and Power",
+    x = "Beta 1",
+    y = "Proportion of Times Null was Rejected (Power)"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+We can see that there is a positive relationship that when effect size increases, the power also increases. Given the null hypothesis, if we reject beta_1 = 0, the probability that a sample may reject null is relatively small.
+
+### plot about showing the average estimate of beta1 and the true value of beta1 
+```{r}
+pop_avg = 
+repeat_results %>% 
+  group_by(beta_1) %>% 
+  summarize(avg_beta_hat_pop = mean(beta_1_hat)) 
+ 
+samples_avg = 
+repeat_results %>% 
+  filter(p_value < 0.05) %>% 
+  group_by(beta_1) %>% 
+  summarize(avg_beta_hat_sample = mean(beta_1_hat)) 
+ggplot() + 
+  geom_point(aes(x = beta_1, y = avg_beta_hat_pop, color = "4"), 
+             data = pop_avg, size = 4, alpha = .4) +
+  geom_smooth(aes(x = beta_1, y = avg_beta_hat_pop, color = "4"), 
+              data = pop_avg, alpha = .5) +
+  geom_point(aes(x = beta_1, y = avg_beta_hat_sample, color = "2"), 
+             data = samples_avg, size = 4, alpha = .4) +
+  geom_smooth(aes(x = beta_1, y = avg_beta_hat_sample, color = "2"), 
+              data = samples_avg, alpha = .5) +
+  scale_color_identity(breaks = c("4", "2"),
+                       labels = c("Population values", "Sample values"),
+                       guide = "legend") +
+  labs(title = "Association Between the Average Estimates and True Values", 
+       x = "True Beta 1",
+       y = "Average Beta 1 hat") 
+```
+
+
 

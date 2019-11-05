@@ -93,13 +93,13 @@ sim_lin_regression = function(n=30, beta0=2, beta1 = 0) {
 
 # do 10000 times simulations 
 sim_results = 
-  rerun(1000, sim_lin_regression(30, 2, 0)) %>% 
+  rerun(10000, sim_lin_regression(30, 2, 0)) %>% 
   bind_rows()
 
 repeat_results = 
   tibble(beta1 = c(0, 1, 2, 3, 4, 5, 6)) %>% 
   mutate(
-    output_list = map(.x = beta1, ~rerun(1000,       
+    output_list = map(.x = beta1, ~rerun(10000,       
                                     sim_lin_regression(beta1 = .x))),
     estimate_df = map(output_list, bind_rows)) %>% 
   select(-output_list) %>% 
@@ -115,7 +115,7 @@ repeat_results %>%
   group_by(beta1, reject) %>% 
   summarize(significant_count = n()) %>% 
   filter(reject == "significant") %>% 
-  mutate(significant_rate = significant_count/1000) %>% 
+  mutate(significant_rate = significant_count/10000) %>% 
   ggplot(aes(x = beta1, y = significant_rate)) + 
   geom_line() +
   geom_point() +

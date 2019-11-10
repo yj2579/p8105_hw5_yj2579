@@ -33,6 +33,8 @@ fill_na = function(x) {
 irs_filled_df = (map_dfr(iris_with_missing, fill_na, .id = "input"))
 ```
 
+The iris_with_missing dataset contains `r nrow(iris_with_missing)` observations and `r ncol(iris_with_missing)` variables. This is a (`r dim(iris_with_missing)`) dataframe, with `r sum(is.na(iris_with_missing))` NA.
+
 # Problem 2
 ```{r}
 # Load the data in 
@@ -157,6 +159,8 @@ ggplot() +
        y = "Average Beta 1 hat") 
 ```
 
-Since the effect size and the the power have the positive linear relationship, when we increase the effect size, we are more likely to reject the null. Then with the increase of the number of the sample value, the mean is approching the null. 
+Since the effect size and the the power have the positive linear relationship, when we increase the effect size, we are more likely to reject the null. Then with the increase of the number of the sample value along with the increase of true value, the mean of estamation is approching the the mean of true value. 
+
+From the graph, the mean of estimate beta_1 across tests for which the null is rejected is not equal to the true value of beta_1. Since the rejected samples contain estimated values that were significantly greater than our null value of 0, the mean of sample value among rejected samples is larger than the mean among all samples. 
 
 

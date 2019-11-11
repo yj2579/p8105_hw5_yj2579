@@ -30,7 +30,10 @@ fill_na = function(x) {
 }
 
 # Apply the function to the dataset 
-irs_filled_df = (map_dfr(iris_with_missing, fill_na, .id = "input"))
+irs_filled_df = (map_dfr(iris_with_missing, fill_na, .id = "input")) 
+
+irs_filled_df%>%
+  knitr::kable(align = 'c', digits = 2)
 ```
 
 The iris_with_missing dataset contains `r nrow(iris_with_missing)` observations and `r ncol(iris_with_missing)` variables. This is a (`r dim(iris_with_missing)`) dataframe, with `r sum(is.na(iris_with_missing))` NA.
@@ -95,13 +98,13 @@ sim_lin_regression = function(n=30, beta0=2, beta1 = 0) {
 
 # do 10000 times simulations 
 sim_results = 
-  rerun(100, sim_lin_regression(30, 2, 0)) %>% 
+  rerun(10000, sim_lin_regression(30, 2, 0)) %>% 
   bind_rows()
 
 repeat_results = 
   tibble(beta1 = c(0, 1, 2, 3, 4, 5, 6)) %>% 
   mutate(
-    output_list = map(.x = beta1, ~rerun(100,       
+    output_list = map(.x = beta1, ~rerun(10000,       
                                     sim_lin_regression(beta1 = .x))),
     estimate_df = map(output_list, bind_rows)) %>% 
   select(-output_list) %>% 
@@ -117,7 +120,7 @@ repeat_results %>%
   group_by(beta1, reject) %>% 
   summarize(reject_count = n()) %>% 
   filter(reject == "nonsignificant") %>% 
-  mutate(reject_rate = reject_count/100) %>% 
+  mutate(reject_rate = reject_count/10000) %>% 
 ggplot(aes(x = beta1, y = reject_rate)) +
         geom_point(color = "blue") +
         geom_smooth() +
@@ -128,7 +131,7 @@ ggplot(aes(x = beta1, y = reject_rate)) +
 
 ```
 
-We can see that there is a positive relationship that when effect size increases, the power also increases. Given the null hypothesis, if we reject beta_1 = 0, the probability that a sample may reject null is relatively small.
+We can see that there is a positive relationship that when effect size increases, the power also increases. Given the null hypothesis, if we reject beta1 = 0, the probability that a sample may reject null is relatively small.
 
 ### plot about showing the average estimate of beta1 and the true value of beta1 
 ```{r}

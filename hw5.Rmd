@@ -32,14 +32,14 @@ fill_na = function(x) {
 # Apply the function to the dataset 
 irs_filled_df = (map_dfr(iris_with_missing, fill_na, .id = "input")) 
 
-irs_filled_df%>%
-  knitr::kable(align = 'c', digits = 2)
+head(irs_filled_df%>%
+  knitr::kable(align = 'c', digits = 2))
 ```
 
 The iris_with_missing dataset contains `r nrow(iris_with_missing)` observations and `r ncol(iris_with_missing)` variables. This is a (`r dim(iris_with_missing)`) dataframe, with `r sum(is.na(iris_with_missing))` NA.
 
 # Problem 2
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Load the data in 
 files = list.files(path = "data")
 
@@ -60,8 +60,8 @@ tidy_data =
     values_to = "value"
   )
 # Show the current data 
-tidy_data %>% 
-  knitr::kable()
+head(tidy_data %>% 
+  knitr::kable())
 
 # Make a plot of different groups 
 tidy_data %>% 
